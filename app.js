@@ -1,18 +1,12 @@
 const express = require("express");
-// const mongoose = require("mongoose");
-const Person = require("./Persons.json");
-const app = express();
-
 const mongoose = require("mongoose");
+const routes = require("./routes/authRoutes");
+
+const app = express();
 
 //middleware
 app.use(express.json());
 
-const fs = require("fs");
-// data
-const data = JSON.parse(fs.readFileSync("Persons.json", "utf8"));
-
-//
 // database connection
 const dbURI = "mongodb://127.0.0.1:27017/Persons";
 mongoose
@@ -24,23 +18,7 @@ mongoose
   .catch((err) => console.log(err));
 
 //routes
-
-app.get("/index-less-than-10", (req, res) => {
-  const collection = mongoose.connection.collection("16th-march");
-
-  collection
-    .find({ index: { $lt: 10 } })
-    .toArray()
-    .then((docs) => {
-      const sortedDocs = docs.sort((a, b) => a.index - b.index);
-      console.log(sortedDocs);
-      res.send(sortedDocs);
-    })
-    .catch((err) => {
-      console.error(err);
-      res.status(500).send({ error: "Error fetching documents" });
-    });
-});
+app.use("/", routes);
 
 //
 // mongoose
