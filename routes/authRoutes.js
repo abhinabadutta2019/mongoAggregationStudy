@@ -2,38 +2,24 @@ const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
 
-// //getting data while index <5 and sort them by index order
-// router.get("/index-less-than-5", async (req, res) => {
-//   const collection = mongoose.connection.collection("persons");
+// group- by age// country
 
-//   try {
-//     const docs = await collection
-//       .find({ index: { $lt: 5 } })
-//       .sort({ index: -1 })
-//       .toArray();
-//     console.log(docs);
-//     res.send(docs);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send({ error: "Error fetching documents" });
-//   }
-// });
-
-// aggregate
-router.get("/index-less-than-5", async (req, res) => {
+router.get("/group-by-country", async (req, res) => {
   const collection = mongoose.connection.collection("persons");
 
   try {
     const docs = await collection
       .aggregate([
         {
-          $match: {
-            index: { $lt: 5 },
-          },
-        },
-        {
-          $sort: {
-            index: -1,
+          //"/group-by-age"
+
+          // $group: {
+          //   _id: "$age",
+          // },
+
+          //"/group-by-country"
+          $group: {
+            _id: "$company.location.country",
           },
         },
       ])
@@ -46,46 +32,17 @@ router.get("/index-less-than-5", async (req, res) => {
   }
 });
 
-// age grater than 39
-router.get("/age-greater-than-39", async (req, res) => {
+// group- by multiple fields
+
+router.get("/group-by-multiple-field", async (req, res) => {
   const collection = mongoose.connection.collection("persons");
 
   try {
     const docs = await collection
       .aggregate([
         {
-          $match: {
-            age: { $gt: 39 },
-          },
-        },
-      ])
-      .toArray();
-    console.log(docs.length);
-    res.send(docs);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send({ error: "Error fetching documents" });
-  }
-});
-
-// gender female age grater than 39
-router.get("/female-age-gt-39", async (req, res) => {
-  const collection = mongoose.connection.collection("persons");
-
-  try {
-    const docs = await collection
-      .aggregate([
-        {
-          $match: {
-            //gender female age grater than 39
-            // $and: [{ gender: "female" }, { age: { $gt: 39 } }],
-
-            //gender female age grater than 39 and tags array size 3
-            $and: [
-              { gender: "female" },
-              { age: { $gt: 39 } },
-              { tags: { $size: 3 } },
-            ],
+          $group: {
+            _id: { eyeColorF: "$eyeColor", favoriteFruitF: "$favoriteFruit" },
           },
         },
       ])
@@ -98,24 +55,18 @@ router.get("/female-age-gt-39", async (req, res) => {
   }
 });
 
-// find -- female-age-gt-39-tags-size-3
-router.get("/female-age-gt-39-tags-size-3", async (req, res) => {
-  const collection = mongoose.connection.collection("persons");
+//output
 
-  try {
-    const docs = await collection
-      .find({
-        gender: "female",
-        age: { $gt: 38 },
-        tags: { $size: 3 },
-      })
-      .toArray();
-    console.log(docs);
-    res.send(docs);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send({ error: "Error fetching documents" });
-  }
-});
+// [
+//   { _id: { eyeColorF: 'green', favoriteFruitF: 'apple' } },
+//   { _id: { eyeColorF: 'green', favoriteFruitF: 'strawberry' } },
+//   { _id: { eyeColorF: 'blue', favoriteFruitF: 'strawberry' } },
+//   { _id: { eyeColorF: 'green', favoriteFruitF: 'banana' } },
+//   { _id: { eyeColorF: 'brown', favoriteFruitF: 'strawberry' } },
+//   { _id: { eyeColorF: 'blue', favoriteFruitF: 'apple' } },
+//   { _id: { eyeColorF: 'brown', favoriteFruitF: 'apple' } },
+//   { _id: { eyeColorF: 'brown', favoriteFruitF: 'banana' } },
+//   { _id: { eyeColorF: 'blue', favoriteFruitF: 'banana' } }
+// ]
 //
 module.exports = router;
