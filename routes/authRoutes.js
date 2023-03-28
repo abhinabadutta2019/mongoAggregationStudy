@@ -3,17 +3,16 @@ const router = express.Router();
 const mongoose = require("mongoose");
 
 //
-
-//count
-
-router.get("/count", async (req, res) => {
+router.get("/sort", async (req, res) => {
   const collection = mongoose.connection.collection("persons");
 
   try {
     const docs = await collection
       .aggregate([
+        // { $match: { age: { $gte: 26 } } },
+        { $group: { _id: "$favoriteFruit" } },
         {
-          $count: "total",
+          $sort: { _id: 1 },
         },
       ])
       .toArray();
@@ -25,18 +24,34 @@ router.get("/count", async (req, res) => {
   }
 });
 
-// [ { allDocumentsCount: 1000 } ]
+// [
+//   {
+//       "_id": "apple"
+//   },
+//   {
+//       "_id": "banana"
+//   },
+//   {
+//       "_id": "strawberry"
+//   }
+// ]
 
 //
-router.get("/group-then-count", async (req, res) => {
+//group then sort
+router.get("/match-then-goup-then-sort", async (req, res) => {
   const collection = mongoose.connection.collection("persons");
 
   try {
     const docs = await collection
       .aggregate([
-        { $group: { _id: { eyeColor: "$eyeColor", age: "$age" } } },
+        { $match: { eyeColor: { $ne: "blue" } } },
         {
-          $count: "eyeColorAndAge",
+          $group: {
+            _id: { eyeColor: "$eyeColor", favoriteFruit: "$favoriteFruit" },
+          },
+        },
+        {
+          $sort: { "_id.eyeColor": 1, "_id.favoriteFruit": -1 },
         },
       ])
       .toArray();
@@ -48,29 +63,13 @@ router.get("/group-then-count", async (req, res) => {
   }
 });
 
-// [ { eyeColorAndAge: 63 } ]
+// [
+//   { _id: { eyeColor: 'brown', favoriteFruit: 'strawberry' } },
+//   { _id: { eyeColor: 'brown', favoriteFruit: 'banana' } },
+//   { _id: { eyeColor: 'brown', favoriteFruit: 'apple' } },
+//   { _id: { eyeColor: 'green', favoriteFruit: 'strawberry' } },
+//   { _id: { eyeColor: 'green', favoriteFruit: 'banana' } },
+//   { _id: { eyeColor: 'green', favoriteFruit: 'apple' } }
+// ]
 
-//
-router.get("/match-then-group-then-count", async (req, res) => {
-  const collection = mongoose.connection.collection("persons");
-
-  try {
-    const docs = await collection
-      .aggregate([
-        { $match: { age: { $gte: 26 } } },
-        { $group: { _id: { eyeColor: "$eyeColor", age: "$age" } } },
-        {
-          $count: "matchEyeColorAndAge",
-        },
-      ])
-      .toArray();
-    console.log(docs);
-    res.send(docs);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send({ error: "Error fetching documents" });
-  }
-});
-
-//[ { matchEyeColorAndAge: 45 } ]
 module.exports = router;
