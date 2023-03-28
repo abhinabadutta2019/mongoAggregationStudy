@@ -2,18 +2,23 @@ const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
 
-//
-router.get("/project", async (req, res) => {
+//limit
+router.get("/limit-project", async (req, res) => {
   const collection = mongoose.connection.collection("persons");
 
   try {
     const docs = await collection
       .aggregate([
-        // { $match: { age: { $gte: 26 } } },
-        { $project: { isActive: 1, name: 1 } },
-        // {
-        //   $sort: { _id: 1 },
-        // },
+        { $limit: 100 },
+        { $match: { eyeColor: { $ne: "blue" } } },
+        {
+          $group: {
+            _id: { eyeColor: "$eyeColor", favoriteFruit: "$favoriteFruit" },
+          },
+        },
+        {
+          $sort: { "_id.eyecolor": 1, "_id.favoriteFruit": -1 },
+        },
       ])
       .toArray();
     console.log(docs);
@@ -23,33 +28,19 @@ router.get("/project", async (req, res) => {
     res.status(500).send({ error: "Error fetching documents" });
   }
 });
-// [
-// {
-//   _id: new ObjectId("642205f4ae7842721f49a5c4"),
-//   name: 'Constance Alvarado',
-//   isActive: false
-// },
-// {
-//   _id: new ObjectId("642205f4ae7842721f49a5c6"),
-//   name: 'Gibbs Carr',
-//   isActive: false
-// },
-// // ... 900 more items
-// ]
 
-//"/project-dont-show-id"
-//
-router.get("/project-dont-show-id", async (req, res) => {
+//unwind
+//unwind breaks array to each arrayMembers smaller parts- and out puts
+router.get("/unwind", async (req, res) => {
   const collection = mongoose.connection.collection("persons");
 
   try {
     const docs = await collection
       .aggregate([
-        // { $match: { age: { $gte: 26 } } },
-        { $project: { _id: 0, isActive: 1, name: 1 } },
-        // {
-        //   $sort: { _id: 1 },
-        // },
+        { $match: { eyeColor: { $ne: "blue" } } },
+        //
+        { $unwind: "$tags" },
+        { $project: { name: 1, index: 1, tags: 1 } },
       ])
       .toArray();
     console.log(docs);
@@ -62,24 +53,15 @@ router.get("/project-dont-show-id", async (req, res) => {
 
 // restucture field with project
 
-router.get("/restucture-field-with-project", async (req, res) => {
+router.get("/unwind-then-group", async (req, res) => {
   const collection = mongoose.connection.collection("persons");
 
   try {
     const docs = await collection
       .aggregate([
-        {
-          $project: {
-            _id: 0,
-            index: 1,
-            name: 1,
-            info: {
-              eyes: "$eyeColor",
-              company: "$company.title",
-              country: "$company.location.country",
-            },
-          },
-        },
+        //
+        { $unwind: "$tags" },
+        { $group: { _id: "$tags" } },
       ])
       .toArray();
     console.log(docs);
@@ -92,20 +74,9 @@ router.get("/restucture-field-with-project", async (req, res) => {
 
 //
 // [
-//   {
-//     index: 0,
-//     name: 'Aurelia Gonzales',
-//     info: { eyes: 'green', company: 'YURTURE', country: 'USA' }
-//   },
-//   {
-//     index: 2,
-//     name: 'Hays Wise',
-//     info: { eyes: 'green', company: 'EXIAND', country: 'France' }
-//   },
-//   {
-//     index: 5,
-//     name: 'Grace Larson',
-//     info: { eyes: 'blue', company: 'OVOLO', country: 'USA' }
-//   }]
+//   { _id: 'culpa' },         { _id: 'ad' },          { _id: 'duis' },
+//   { _id: 'reprehenderit' }, { _id: 'dolore' },      { _id: 'non' },
+//   { _id: 'mollit' },        { _id: 'veniam' },      { _id: 'qui' },
+// ]
 
 module.exports = router;
